@@ -7,7 +7,7 @@ const allowedLogLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly']
 
 type LoggerConfig = {
   path: string
-  logHttpAccess?: boolean
+  enableAccessLogs?: boolean
   excludeRoutes?: RegExp[]
 }
 
@@ -75,10 +75,10 @@ export class LoggerModule implements Module {
   }
 
   extendExpress(server: Application) {
-    const { logHttpAccess = false, excludeRoutes = [] } = this.config
+    const { enableAccessLogs = false, excludeRoutes = [] } = this.config
 
     // Don't add logging middleware if not cofigured
-    if (!logHttpAccess) return
+    if (!enableAccessLogs) return
 
     server.use((req, res, next) => {
       // If the uri matches an exclusion, don't log it

@@ -1,6 +1,6 @@
 {
   "name": "@robb_j/chowchow-logger",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A logging module for chowchow",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

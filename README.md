@@ -1,13 +1,30 @@
-# Typescript Node Sample Project
+# Chow Chow | Logger
 
-A project setup with [robb-j/ts-node-base](https://github.com/robb-j/ts-node-base/) template which creates a node app, with the common things already setup for Typescript.
+Provides logging to [chowchow](https://github.com/robb-j/chowchow)
+using [winston](https://npmjs.org/package/winston).
+
+```ts
+import { ChowChow, BaseContext } from '@robb_j/chowchow'
+import { LoggerModule, LoggerContext } from '@robb_j/chowchow-logger'
+
+type Context = BaseContext & LoggerContext
+;async () => {
+  let chow = ChowChow.create()
+
+  chow.use(new LoggerModule({ path: 'path/to/logs' }))
+
+  await chow.start()
+}
+```
 
 ## Features
 
-- Multi-stage docker build to install, test and deploy
-- Testing setup with `jest`, `ts-jest`
-- Linting setup with `tsc`
-- Auto load `.env` files with `dotenv`
+- Adds `logger` to the context, a `winston.Logger` instance
+  - Save logs to the path specified by `path` option
+  - Configure logging level with `LOG_LEVEL` env variable
+  - Logs are written to different files in your log folder
+- Optionally log http requests by passing `enableAccessLogs`
+  - Exclude routes using `excludeRoutes` parameter, tested against `req.path`
 
 ## Dev Commands
 

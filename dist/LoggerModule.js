@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const winston_1 = __importDefault(require("winston"));
 const fs_1 = require("fs");
 const allowedLogLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
+const defaultPersistentLevels = ['error', 'warn', 'info', 'debug'];
 class LoggerModule {
     constructor(config) {
         this.app = null;
@@ -16,24 +17,36 @@ class LoggerModule {
         return (process.env.LOG_LEVEL || 'error').toLowerCase();
     }
     checkEnvironment() {
+        // Ensure a correct LOG_LEVEL was set
         if (!allowedLogLevels.includes(this.logLevel)) {
             throw new Error(`Invalid LOG_LEVEL '${this.logLevel}'`);
+        }
+        // Ensure passed log levels are valid
+        const { persistentLevels = [] } = this.config;
+        const invalid = persistentLevels.filter(l => !allowedLogLevels.includes(l));
+        if (invalid.length > 0) {
+            throw new Error(`Invalid persistent level(s): ${invalid.join(', ')}`);
         }
     }
     setupModule() {
         const allLevels = winston_1.default.config.npm.levels;
         const current = winston_1.default.config.npm.levels[this.logLevel];
+        // Make the log directory if it doesn't exist
+        // If it failed then it already exists
         try {
             fs_1.mkdirSync(this.config.path);
         }
         catch (error) { }
-        const logs = ['error', 'warn', 'info', 'debug'];
-        let fileTransports = logs.map(loggingLevel => new winston_1.default.transports.File({
+        // Create log transports for these log levels
+        const { persistentLevels = defaultPersistentLevels } = this.config;
+        let fileTransports = persistentLevels.map(loggingLevel => new winston_1.default.transports.File({
             filename: `${loggingLevel}.log`,
             dirname: this.config.path,
             level: loggingLevel,
             silent: current < allLevels[loggingLevel]
         }));
+        // Create a logger with files for different levels and
+        // a console logger for the configured level
         this.logger = winston_1.default.createLogger({
             level: this.logLevel,
             format: winston_1.default.format.json(),
@@ -45,6 +58,14 @@ class LoggerModule {
                 })
             ]
         });
+        // Apply the error logger if configured
+        if (this.config.enableErrorLogs) {
+            this.app.applyErrorHandler((err, ctx) => {
+                let { method, path } = ctx.req;
+                let message = `${method.toLowerCase()} ${path}: ${err.message}`;
+                this.logger.error(message, { stack: err.stack });
+            });
+        }
     }
     clearModule() {
         delete this.logger;

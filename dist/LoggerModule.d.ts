@@ -4,7 +4,9 @@ import winston from 'winston';
 declare type LoggerConfig = {
     path: string;
     enableAccessLogs?: boolean;
+    enableErrorLogs?: boolean;
     excludeRoutes?: RegExp[];
+    persistentLevels?: string[];
 };
 export declare type LoggerContext = {
     logger: winston.Logger;

@@ -26,6 +26,11 @@ type Context = BaseContext & LoggerContext
 - Optionally log http requests by passing `enableAccessLogs`
   - Exclude routes using `excludeRoutes` parameter, tested against `req.path`
 - Optionally log errors from http request by passing `enableErrorLogs`
+- Configure which levels are written to files in your log folder
+  - Defaults to write `error`, `warn`, `info` and `debug`
+  - Following `winston`, logs levels are inherited so higher levels are included in the lower ones.
+    E.g. `info` logs will include all `warn` and `error` messages
+  - Configure by passing `persistentLevels` as an array of strings
 
 ## Dev Commands
 

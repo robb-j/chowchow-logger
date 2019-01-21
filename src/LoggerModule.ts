@@ -4,12 +4,14 @@ import winston from 'winston'
 import { mkdirSync } from 'fs'
 
 const allowedLogLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly']
+const defaultPersistentLevels = ['error', 'warn', 'info', 'debug']
 
 type LoggerConfig = {
   path: string
   enableAccessLogs?: boolean
   enableErrorLogs?: boolean
   excludeRoutes?: RegExp[]
+  persistentLevels?: string[]
 }
 
 export type LoggerContext = {
@@ -34,6 +36,13 @@ export class LoggerModule implements Module {
     if (!allowedLogLevels.includes(this.logLevel)) {
       throw new Error(`Invalid LOG_LEVEL '${this.logLevel}'`)
     }
+
+    // Ensure passed log levels are valid
+    const { persistentLevels = [] } = this.config
+    const invalid = persistentLevels.filter(l => !allowedLogLevels.includes(l))
+    if (invalid.length > 0) {
+      throw new Error(`Invalid persistent level(s): ${invalid.join(', ')}`)
+    }
   }
 
   setupModule() {
@@ -47,8 +56,8 @@ export class LoggerModule implements Module {
     } catch (error) {}
 
     // Create log transports for these log levels
-    const logs = ['error', 'warn', 'info', 'debug']
-    let fileTransports = logs.map(
+    const { persistentLevels = defaultPersistentLevels } = this.config
+    let fileTransports = persistentLevels.map(
       loggingLevel =>
         new winston.transports.File({
           filename: `${loggingLevel}.log`,

@@ -8,6 +8,7 @@ const allowedLogLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly']
 type LoggerConfig = {
   path: string
   enableAccessLogs?: boolean
+  enableErrorLogs?: boolean
   excludeRoutes?: RegExp[]
 }
 
@@ -29,6 +30,7 @@ export class LoggerModule implements Module {
   }
 
   checkEnvironment() {
+    // Ensure a correct LOG_LEVEL was set
     if (!allowedLogLevels.includes(this.logLevel)) {
       throw new Error(`Invalid LOG_LEVEL '${this.logLevel}'`)
     }
@@ -38,12 +40,14 @@ export class LoggerModule implements Module {
     const allLevels = winston.config.npm.levels
     const current = winston.config.npm.levels[this.logLevel]
 
+    // Make the log directory if it doesn't exist
+    // If it failed then it already exists
     try {
       mkdirSync(this.config.path)
     } catch (error) {}
 
+    // Create log transports for these log levels
     const logs = ['error', 'warn', 'info', 'debug']
-
     let fileTransports = logs.map(
       loggingLevel =>
         new winston.transports.File({
@@ -54,6 +58,8 @@ export class LoggerModule implements Module {
         })
     )
 
+    // Create a logger with files for different levels and
+    // a console logger for the configured level
     this.logger = winston.createLogger({
       level: this.logLevel,
       format: winston.format.json(),
@@ -68,6 +74,15 @@ export class LoggerModule implements Module {
         })
       ]
     })
+
+    // Apply the error logger if configured
+    if (this.config.enableErrorLogs) {
+      this.app.applyErrorHandler((err, ctx) => {
+        let { method, path } = ctx.req
+        let message = `${method.toLowerCase()} ${path}: ${err.message}`
+        this.logger.error(message, { stack: err.stack })
+      })
+    }
   }
 
   clearModule() {

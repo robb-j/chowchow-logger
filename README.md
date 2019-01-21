@@ -25,6 +25,7 @@ type Context = BaseContext & LoggerContext
   - Logs are written to different files in your log folder
 - Optionally log http requests by passing `enableAccessLogs`
   - Exclude routes using `excludeRoutes` parameter, tested against `req.path`
+- Optionally log errors from http request by passing `enableErrorLogs`
 
 ## Dev Commands
 

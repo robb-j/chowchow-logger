@@ -10,12 +10,8 @@ const logsPath = join(__dirname, 'test_logs')
 const isFileTransport = (some: any) => some instanceof winston.transports.File
 
 class FakeChow extends ChowChow {
-  protected startServer() {
-    return Promise.resolve()
-  }
-  protected stopServer() {
-    return Promise.resolve()
-  }
+  async startServer() {}
+  async stopServer() {}
 }
 
 describe('LoggerModule', () => {

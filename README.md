@@ -5,7 +5,7 @@ using [winston](https://npmjs.org/package/winston) with npm logging levels.
 
 ```ts
 // An example endpoint using the logger
-export function listProducts({ req, res, logger }: Context) {
+export async function listProducts({ req, res, logger }: Context) {
   if (!req.query.token) {
     logger.error('Unauthenticated session')
   } else {

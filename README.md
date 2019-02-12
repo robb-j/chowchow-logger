@@ -47,13 +47,12 @@ type Context = BaseContext & LoggerContext
   - Logs are written to different files in your log folder
 - Optionally log http requests by passing `enableAccessLogs`
   - Exclude routes using `excludeRoutes` parameter, tested against `req.path`
-- Optionally log errors from http request by passing `enableErrorLogs`
+- Optionally log errors from http requests by passing `enableErrorLogs`
 - Has different levels of logging, using winston's [npm levels](https://github.com/winstonjs/winston#logging-levels)
-- Configure which levels are written to files in your log folder
-  - Defaults to write `error`, `warn`, `info` and `debug`
+- Configure which levels are written to files in your log folder by passing `persistentLevels`
+  - Defaults to write `error`, `warn`, `info` and `debug` to their own files
   - Following `winston`, logs levels are inherited so higher levels are included in the lower ones.
     E.g. `info` logs will include all `warn` and `error` messages.
-  - Configure by passing `persistentLevels` as an array of strings
 
 ## Environment variables
 
@@ -68,14 +67,14 @@ For more see: [npm logging levels](https://github.com/winstonjs/winston#using-lo
 
 There is one required constructor parameter:
 
-- `path` - This is the path to a folder where your logs will be stored. The folder will be created if it doesn't exist.
+- `path: string` - This is the path to a folder where your logs will be stored. The folder will be created if it doesn't exist.
 
 There are also option parameters to enabled additional features:
 
-- `enableAccessLogs` – Turn on http traffic logging
-- `excludeRoutes` – An array of RegExps to match paths you don't want to log
-- `enableErrorLogs` – Turn on error logging, logs errors caught inside endpoints
-- `persistentLevels` – Which log levels you want to be written to files (default: `error, warn, info, debug`)
+- `enableAccessLogs: boolean` – Turn on http traffic logging (default: `false`)
+- `excludeRoutes: RegExp[]` – An array of RegExps to match paths you don't want to log (default: `[]`)
+- `enableErrorLogs: boolean` – Turn on error logging, logs errors caught inside endpoints (default: `false`)
+- `persistentLevels: string[]` – Which log levels you want to be written to files (default: `error, warn, info, debug`)
 
 ## Dev Commands
 

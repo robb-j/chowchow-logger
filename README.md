@@ -3,6 +3,8 @@
 Provides logging to [chowchow](https://github.com/robb-j/chowchow)
 using [winston](https://npmjs.org/package/winston) with npm logging levels.
 
+[![CircleCI](https://circleci.com/gh/robb-j/chowchow.svg?style=svg)](https://circleci.com/gh/robb-j/chowchow)
+
 ```ts
 // An example endpoint using the logger
 export function listProducts({ req, res, logger }: Context) {

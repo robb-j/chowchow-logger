@@ -1,12 +1,105 @@
 import { LoggerModule } from '../LoggerModule'
+import { join } from 'path'
+import rimraf from 'rimraf'
+import { statSync, readFileSync } from 'fs'
+import winston from 'winston'
+import { ChowChow, ChowChowInternals } from '@robb_j/chowchow'
+import supertest from 'supertest'
+
+const logsPath = join(__dirname, 'test_logs')
+
+class FakeChow extends ChowChow {
+  protected startServer() {
+    return Promise.resolve()
+  }
+  protected stopServer() {
+    return Promise.resolve()
+  }
+}
 
 describe('LoggerModule', () => {
   let logger: LoggerModule
+  let chow: FakeChow & ChowChowInternals
+
   beforeEach(() => {
-    logger = new LoggerModule({ path: 'logs' })
+    process.env.LOG_LEVEL = 'silly'
+
+    rimraf.sync(logsPath)
+
+    logger = new LoggerModule({
+      path: logsPath,
+      persistentLevels: ['silly', 'error'],
+      excludeRoutes: [/^\/test$/]
+    })
+    chow = FakeChow.create().use(logger) as any
+    logger.app = chow
   })
 
-  it('should exist', async () => {
-    expect(logger).toBeDefined()
+  describe('#checkEnvironment', () => {
+    it('should succeed', async () => {
+      logger.checkEnvironment()
+    })
+  })
+
+  describe('#setupModule', () => {
+    it('should create the logs directory', async () => {
+      await logger.setupModule()
+      const stats = statSync(logsPath)
+      expect(stats.isDirectory()).toBe(true)
+    })
+    it('should create transports for persisten levels', async () => {
+      await logger.setupModule()
+
+      let fileTransports = logger.logger.transports.filter(
+        t => t instanceof winston.transports.File
+      )
+
+      expect(fileTransports).toHaveLength(2)
+    })
+    it('should add an error handler', async () => {
+      logger.config.enableErrorLogs = true
+      await logger.setupModule()
+
+      expect(chow.errorHandlers).toHaveLength(1)
+    })
+  })
+
+  describe('#clearModule', () => {
+    it('should delete the logger', async () => {
+      await logger.setupModule()
+      await logger.clearModule()
+      expect(logger.logger).toBeUndefined()
+    })
+  })
+
+  describe('#extendExpress', () => {
+    beforeEach(async () => {
+      logger.config.enableAccessLogs = true
+
+      await logger.setupModule()
+      await logger.extendExpress(chow.expressApp)
+
+      chow.expressApp.get('/', (req, res) => res.send('hi'))
+      chow.expressApp.get('/test', (req, res) => res.send('hi 2'))
+    })
+    it('should add access logging middleware', async () => {
+      await supertest(chow.expressApp).get('/')
+
+      let contents = readFileSync(join(logsPath, 'silly.log'), 'utf8')
+      expect(contents.length).toBeGreaterThan(0)
+    })
+    it('should log non-excluded routes', async () => {
+      await supertest(chow.expressApp).get('/test')
+
+      let contents = readFileSync(join(logsPath, 'silly.log'), 'utf8')
+      expect(contents.length).toBe(0)
+    })
+  })
+
+  describe('#extendEndpointContext', () => {
+    it('should add the logger', async () => {
+      let ctx = logger.extendEndpointContext()
+      expect(ctx.logger).toBeDefined()
+    })
   })
 })

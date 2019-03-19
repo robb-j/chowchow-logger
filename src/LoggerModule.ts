@@ -20,8 +20,8 @@ export type LoggerContext = {
 
 export class LoggerModule implements Module {
   config: LoggerConfig
-  app: ChowChow = null as any
-  logger: winston.Logger = null as any
+  app!: ChowChow
+  logger!: winston.Logger
 
   get logLevel() {
     return (process.env.LOG_LEVEL || 'error').toLowerCase()

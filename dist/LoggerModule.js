@@ -8,13 +8,11 @@ const fs_1 = require("fs");
 const allowedLogLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly'];
 const defaultPersistentLevels = ['error', 'warn', 'info', 'debug'];
 class LoggerModule {
-    constructor(config) {
-        this.app = null;
-        this.logger = null;
-        this.config = config;
-    }
     get logLevel() {
         return (process.env.LOG_LEVEL || 'error').toLowerCase();
+    }
+    constructor(config) {
+        this.config = config;
     }
     checkEnvironment() {
         // Ensure a correct LOG_LEVEL was set
@@ -31,20 +29,25 @@ class LoggerModule {
     setupModule() {
         const allLevels = winston_1.default.config.npm.levels;
         const current = winston_1.default.config.npm.levels[this.logLevel];
-        // Make the log directory if it doesn't exist
-        // If it failed then it already exists
-        try {
-            fs_1.mkdirSync(this.config.path);
+        // We will conditionally create file transports below
+        let fileTransports = [];
+        // If they passed a path, create file transports
+        if (this.config.path) {
+            // Make the log directory if it doesn't exist
+            // If it failed then it already exists
+            try {
+                fs_1.mkdirSync(this.config.path);
+            }
+            catch (error) { }
+            // Create log transports for these log levels
+            const { persistentLevels = defaultPersistentLevels } = this.config;
+            fileTransports = persistentLevels.map(loggingLevel => new winston_1.default.transports.File({
+                filename: `${loggingLevel}.log`,
+                dirname: this.config.path,
+                level: loggingLevel,
+                silent: current < allLevels[loggingLevel]
+            }));
         }
-        catch (error) { }
-        // Create log transports for these log levels
-        const { persistentLevels = defaultPersistentLevels } = this.config;
-        let fileTransports = persistentLevels.map(loggingLevel => new winston_1.default.transports.File({
-            filename: `${loggingLevel}.log`,
-            dirname: this.config.path,
-            level: loggingLevel,
-            silent: current < allLevels[loggingLevel]
-        }));
         // Create a logger with files for different levels and
         // a console logger for the configured level
         this.logger = winston_1.default.createLogger({

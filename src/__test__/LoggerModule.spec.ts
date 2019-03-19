@@ -27,8 +27,8 @@ describe('LoggerModule', () => {
 
     // Create a logger & chow for testing
     logger = new LoggerModule({
-      path: logsPath,
-      persistentLevels: ['silly', 'error'],
+      // path: logsPath,
+      // persistentLevels: ['silly', 'error'],
       excludeRoutes: [/^\/test$/]
     })
     chow = FakeChow.create().use(logger) as any
@@ -43,11 +43,14 @@ describe('LoggerModule', () => {
 
   describe('#setupModule', () => {
     it('should create the logs directory', async () => {
+      logger.config.path = logsPath
       await logger.setupModule()
       const stats = statSync(logsPath)
       expect(stats.isDirectory()).toBe(true)
     })
-    it('should create transports for persisten levels', async () => {
+    it('should create transports for persistent levels', async () => {
+      logger.config.path = logsPath
+      logger.config.persistentLevels = ['silly', 'error']
       await logger.setupModule()
       expect(logger.logger.transports.filter(isFileTransport)).toHaveLength(2)
     })
@@ -68,6 +71,7 @@ describe('LoggerModule', () => {
 
   describe('#extendExpress', () => {
     beforeEach(async () => {
+      logger.config.path = logsPath
       logger.config.enableAccessLogs = true
 
       // Setup the logger with express
@@ -81,19 +85,20 @@ describe('LoggerModule', () => {
     it('should add access logging middleware', async () => {
       await supertest(chow.expressApp).get('/')
 
-      let contents = readFileSync(join(logsPath, 'silly.log'), 'utf8')
+      let contents = readFileSync(join(logsPath, 'debug.log'), 'utf8')
       expect(contents.length).toBeGreaterThan(0)
     })
     it('should log non-excluded routes', async () => {
       await supertest(chow.expressApp).get('/test')
 
-      let contents = readFileSync(join(logsPath, 'silly.log'), 'utf8')
+      let contents = readFileSync(join(logsPath, 'debug.log'), 'utf8')
       expect(contents.length).toBe(0)
     })
   })
 
   describe('#extendEndpointContext', () => {
     it('should add the logger', async () => {
+      await logger.setupModule()
       let ctx = logger.extendEndpointContext()
       expect(ctx.logger).toBeDefined()
     })

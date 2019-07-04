@@ -7,7 +7,7 @@ const allowedLogLevels = ['error', 'warn', 'info', 'verbose', 'debug', 'silly']
 const defaultPersistentLevels = ['error', 'warn', 'info', 'debug']
 
 type LoggerConfig = {
-  path: string
+  path?: string
   enableAccessLogs?: boolean
   enableErrorLogs?: boolean
   excludeRoutes?: RegExp[]
@@ -20,8 +20,8 @@ export type LoggerContext = {
 
 export class LoggerModule implements Module {
   config: LoggerConfig
-  app: ChowChow = null as any
-  logger: winston.Logger = null as any
+  app!: ChowChow
+  logger!: winston.Logger
 
   get logLevel() {
     return (process.env.LOG_LEVEL || 'error').toLowerCase()
@@ -49,23 +49,29 @@ export class LoggerModule implements Module {
     const allLevels = winston.config.npm.levels
     const current = winston.config.npm.levels[this.logLevel]
 
-    // Make the log directory if it doesn't exist
-    // If it failed then it already exists
-    try {
-      mkdirSync(this.config.path)
-    } catch (error) {}
+    // We will conditionally create file transports below
+    let fileTransports: winston.transports.FileTransportInstance[] = []
 
-    // Create log transports for these log levels
-    const { persistentLevels = defaultPersistentLevels } = this.config
-    let fileTransports = persistentLevels.map(
-      loggingLevel =>
-        new winston.transports.File({
-          filename: `${loggingLevel}.log`,
-          dirname: this.config.path,
-          level: loggingLevel,
-          silent: current < allLevels[loggingLevel]
-        })
-    )
+    // If they passed a path, create file transports
+    if (this.config.path) {
+      // Make the log directory if it doesn't exist
+      // If it failed then it already exists
+      try {
+        mkdirSync(this.config.path)
+      } catch (error) {}
+
+      // Create log transports for these log levels
+      const { persistentLevels = defaultPersistentLevels } = this.config
+      fileTransports = persistentLevels.map(
+        loggingLevel =>
+          new winston.transports.File({
+            filename: `${loggingLevel}.log`,
+            dirname: this.config.path,
+            level: loggingLevel,
+            silent: current < allLevels[loggingLevel]
+          })
+      )
+    }
 
     // Create a logger with files for different levels and
     // a console logger for the configured level

@@ -2,7 +2,7 @@ import { Module, ChowChow } from '@robb_j/chowchow';
 import { Application } from 'express';
 import winston from 'winston';
 declare type LoggerConfig = {
-    path: string;
+    path?: string;
     enableAccessLogs?: boolean;
     enableErrorLogs?: boolean;
     excludeRoutes?: RegExp[];
